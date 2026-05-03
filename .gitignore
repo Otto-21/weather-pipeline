@@ -1,0 +1,6 @@
+# .gitignore
+.env
+__pycache__/
+*.pyc
+data/
+.venv_proj_eng_dados/
