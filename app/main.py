@@ -14,7 +14,7 @@ scheduler = AsyncIOScheduler()
 
 DEFAULT_CITIES = [
     "Rio Claro,SP",
-    "Americana,SP"
+    "Americana,SP",
     "Campinas,SP",
     "São Paulo,SP",
     "Rio de Janeiro,RJ",
