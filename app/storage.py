@@ -4,6 +4,7 @@ import duckdb
 from app.config import settings
 from app.models import WeatherRaw
 
+
 CURATED_PATH = settings.curated_dir / "weather.parquet"
 
 
@@ -34,3 +35,34 @@ def save_raw(record: WeatherRaw) -> None:
     if path.exists():
         existing = pq.read_table(path)
         pq.write_table(pa.concat_tables([existing, row]), path)
+    else:
+        pq.write_table(row, path)
+    
+
+def rebuild_curated() -> int:
+    raw_files = list(settings.raw_dir.rglob("*.parquet"))
+    if not raw_files:
+        return 0
+
+    con = duckdb.connect()
+    pattern = str(settings.raw_dir / "**" / "*.parquet")
+
+    con.execute(f"""
+        COPY(
+            SELECT * FROM read_parquet('{pattern}', hive_partitioning=false)
+            ORDER BY collected_at       
+        )
+        TO '{CURATED_PATH}' (FORMAT PARQUET)
+    """)
+    count = con.execute("SELECT COUNT(*) FROM '{CURATED_PATH}'").fetchone()[0]
+    con.close()
+    return count
+
+
+def query(sql: str):
+    if not CURATED_PATH.exists():
+        return None
+    con = duckdb.connect()
+    result = con.execute(sql.replace("{curated}", f"'{CURATED_PATH}'")).df()
+    con.close()
+    return result
